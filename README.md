@@ -8,15 +8,15 @@ Use the app download below. GitHub's **Code → Download ZIP** contains source c
 
 | Phone | Download | Minimum system |
 | --- | --- | --- |
-| OPPO A96 and other ARM64 Android phones | [Download smaller Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.2/TAMAD-v1.2.2-arm64.apk) | Android 7.0 or newer |
-| Other Android phones | [Download universal Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.2/TAMAD-v1.2.2-android.apk) | Android 7.0 or newer |
+| OPPO A96 and other ARM64 Android phones | [Download smaller Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.3/TAMAD-v1.2.3-arm64.apk) | Android 7.0 or newer |
+| Other Android phones | [Download universal Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.3/TAMAD-v1.2.3-android.apk) | Android 7.0 or newer |
 | iPhone and iPad | Installable download not available yet | iOS/iPadOS 15.5 or newer |
 
-On an OPPO A96, choose the smaller ARM64 APK. Download it on your phone, open it from Downloads, and follow Android's installation prompt. These previews use an Android debug certificate, so they are for testing rather than Play Store distribution. [Checksums for both APKs](https://github.com/teng08/TAMAD/releases/tag/v1.2.2) are listed in the release.
+On an OPPO A96, choose the smaller ARM64 APK. Download it on your phone, open it from Downloads, and follow Android's installation prompt. These previews use an Android debug certificate, so they are for testing rather than Play Store distribution. [Checksums for both APKs](https://github.com/teng08/TAMAD/releases/tag/v1.2.3) are listed in the release.
 
-The v1.2.2 APKs have verified Android signatures. The published universal APK downloaded, installed, and launched in Android 7, 11, 13, and 15 emulators. Installation on the OPPO A96 still needs to be confirmed. If a TAMAD app is already on your phone, do not remove it before backing up any saved documents; removing it can erase the app's private files.
+The v1.2.3 APKs have verified Android signatures. The published universal APK downloaded, installed, and launched in Android 7, 11, 13, and 15 emulators. Installation on the OPPO A96 still needs to be confirmed. If a TAMAD app is already on your phone, do not remove it before backing up any saved documents; removing it can erase the app's private files.
 
-The iOS app passes a macOS build check and renders its home screen in an iPad simulator, but an installable iPhone or iPad release requires Apple code signing and distribution through TestFlight or the App Store. The source-code ZIP and the unsigned iOS build cannot be installed on an iPhone or iPad. See the [verification report](docs/verification-v1.2.2.md) and [GitHub Releases](https://github.com/teng08/TAMAD/releases).
+The iOS app passes a macOS build check and renders its home screen in an iPad simulator, but an installable iPhone or iPad release requires Apple code signing and distribution through TestFlight or the App Store. The source-code ZIP and the unsigned iOS build cannot be installed on an iPhone or iPad. See the [verification report](docs/verification-v1.2.3.md) and [GitHub Releases](https://github.com/teng08/TAMAD/releases).
 
 ## Working in this release
 
@@ -26,13 +26,13 @@ The iOS app passes a macOS build check and renders its home screen in an iPad si
 - An **Add file** button on Home and Library opens the phone's file picker on Android and iOS. It imports PDF, JPG, JPEG, or PNG files into the private document library. Imported images become single-page PDFs; imported PDFs keep their original pages and can be opened or shared.
 - Multi-page A4 PDF generation with no TAMAD watermark.
 - Local document library with name and OCR-text search.
-- Page reordering and 90-degree rotation with automatic PDF regeneration.
+- Page reordering, 90-degree rotation, and reversible Enhance, Grayscale, and Black and White filters with automatic PDF regeneration.
 - On-device Latin text recognition for English and Filipino text.
 - Open and share PDFs through the phone's installed apps.
 - Two-page ID-card scanning mode.
 - Original Material 3 UI with phone-controlled light and dark themes.
 
-The Android scanner UI and model are provided by Google Play services and may need a one-time module download. iOS uses the native VisionKit document camera and requires a real iPhone or iPad for camera scanning. Imported PDFs retain their original pages; page rotation and OCR are available for image scans and imported images. Merge/split, signatures, annotation, password protection, recycle bin, QR scanning, and searchable PDF text layers are visibly marked as future work rather than shipped as non-working buttons.
+The Android scanner UI and model are provided by Google Play services and may need a one-time module download. iOS uses the native VisionKit document camera and requires a real iPhone or iPad for camera scanning. Imported PDFs retain their original pages; page editing and OCR are available for image scans and imported images. Applying a filter saves one extra local copy of that page so Original color can restore it. Merge/split, signatures, annotation, password protection, recycle bin, QR scanning, and searchable PDF text layers are visibly marked as future work rather than shipped as non-working buttons.
 
 ## Build
 
