@@ -1,0 +1,37 @@
+name: Verify Android APK installation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [30, 35]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download published APK
+        run: |
+          curl --fail --location --retry 3 \
+            --output tamad.apk \
+            https://github.com/teng08/TAMAD/releases/download/v1.2.0/TAMAD-v1.2.0-android.apk
+          printf '%s  %s\n' '439024B64D93189F9FF12F5C4EDD15AFE8E32B932353C82803640FDB84F9168F' tamad.apk | sha256sum --check
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and launch on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          script: |
+            adb install -r tamad.apk
+            adb shell pm path com.tamad.tamad
+            adb shell am start -n com.tamad.tamad/.MainActivity
+            sleep 15
+            adb shell pidof com.tamad.tamad
