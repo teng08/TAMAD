@@ -64,6 +64,6 @@ The iOS target cannot be built locally on Windows. [macOS verification run 41997
 - APK size: 87,858,328 bytes.
 - APK SHA-256: `439024B64D93189F9FF12F5C4EDD15AFE8E32B932353C82803640FDB84F9168F`.
 - Android `apksigner verify`: passed with APK Signature Scheme v2 and one Android Debug RSA signer.
-- iOS compile: pending macOS GitHub Actions verification for this version.
+- [macOS verification run 42000855201](https://github.com/teng08/TAMAD/actions/runs/42000855201) for commit `c256c36` passed package resolution, Dart analysis, 3/3 tests, and `flutter build ios --release --no-codesign`.
 
 The Windows host has no usable Android emulator or connected phone, and no iPhone or Apple signing setup. Runtime behavior of file picking, camera scanning, OCR, opening, and sharing remains unverified on physical devices.
