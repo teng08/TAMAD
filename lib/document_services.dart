@@ -89,22 +89,37 @@ class DocumentRepository {
   static const _metadataKey = 'tamad.documents.v1';
   static const _uuid = Uuid();
 
+  DocumentRepository({Future<Directory> Function()? documentsDirectory})
+    : _documentsDirectory =
+          documentsDirectory ?? getApplicationDocumentsDirectory;
+
+  final Future<Directory> Function() _documentsDirectory;
+
   Future<List<DocumentRecord>> load() async {
     final preferences = await SharedPreferences.getInstance();
     final raw = preferences.getString(_metadataKey);
     if (raw == null || raw.isEmpty) return [];
-    final values = jsonDecode(raw) as List<dynamic>;
-    final records = values
-        .map(
-          (item) =>
-              DocumentRecord.fromJson(Map<String, dynamic>.from(item as Map)),
-        )
-        .where(
-          (item) =>
-              File(item.pdfPath).existsSync() &&
-              item.pages.every((page) => File(page).existsSync()),
-        )
-        .toList();
+    final dynamic values;
+    try {
+      values = jsonDecode(raw);
+    } on FormatException {
+      return [];
+    }
+    if (values is! List) return [];
+    final records = <DocumentRecord>[];
+    for (final value in values) {
+      try {
+        final item = DocumentRecord.fromJson(
+          Map<String, dynamic>.from(value as Map),
+        );
+        if (File(item.pdfPath).existsSync() &&
+            item.pages.every((page) => File(page).existsSync())) {
+          records.add(item);
+        }
+      } catch (_) {
+        // Skip damaged metadata while keeping other documents accessible.
+      }
+    }
     records.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return records;
   }
@@ -125,54 +140,85 @@ class DocumentRepository {
       throw ArgumentError('At least one scanned page is required.');
     }
     final id = _uuid.v4();
-    final root = await getApplicationDocumentsDirectory();
+    final root = await _documentsDirectory();
     final directory = Directory(path.join(root.path, 'TAMAD', id));
     await directory.create(recursive: true);
-    final storedPages = <String>[];
-    for (var index = 0; index < sourcePaths.length; index++) {
-      final source = File(normalizeFilePath(sourcePaths[index]));
-      final sourceExtension = path.extension(source.path);
-      final extension = sourceExtension.isEmpty ? '.jpg' : sourceExtension;
-      final destination = path.join(
-        directory.path,
-        'page_${(index + 1).toString().padLeft(3, '0')}$extension',
+    try {
+      final storedPages = <String>[];
+      for (var index = 0; index < sourcePaths.length; index++) {
+        final source = File(normalizeFilePath(sourcePaths[index]));
+        final extension = path.extension(source.path).toLowerCase();
+        final preserveFormat = const [
+          '.jpg',
+          '.jpeg',
+          '.png',
+        ].contains(extension);
+        final destination = path.join(
+          directory.path,
+          'page_${(index + 1).toString().padLeft(3, '0')}${preserveFormat ? extension : '.jpg'}',
+        );
+        if (preserveFormat) {
+          await source.copy(destination);
+        } else {
+          final decoded = image_lib.decodeImage(await source.readAsBytes());
+          if (decoded == null) {
+            throw const FormatException(
+              'This photo format could not be imported. Choose a JPG or PNG instead.',
+            );
+          }
+          await File(destination).writeAsBytes(
+            image_lib.encodeJpg(decoded, quality: 92),
+            flush: true,
+          );
+        }
+        storedPages.add(destination);
+      }
+      final createdAt = DateTime.now();
+      final safeName = sanitizeFileName(
+        name?.trim().isNotEmpty == true
+            ? name!.trim()
+            : 'Scan ${DateFormat('yyyy-MM-dd HH.mm').format(createdAt)}',
       );
-      await source.copy(destination);
-      storedPages.add(destination);
+      final pdfPath = path.join(directory.path, '$safeName.pdf');
+      await _writePdf(storedPages, pdfPath);
+      return DocumentRecord(
+        id: id,
+        name: safeName,
+        createdAt: createdAt,
+        pages: storedPages,
+        pdfPath: pdfPath,
+      );
+    } catch (_) {
+      await directory.delete(recursive: true);
+      rethrow;
     }
-    final createdAt = DateTime.now();
-    final safeName = sanitizeFileName(
-      name?.trim().isNotEmpty == true
-          ? name!.trim()
-          : 'Scan ${DateFormat('yyyy-MM-dd HH.mm').format(createdAt)}',
-    );
-    final pdfPath = path.join(directory.path, '$safeName.pdf');
-    await _writePdf(storedPages, pdfPath);
-    return DocumentRecord(
-      id: id,
-      name: safeName,
-      createdAt: createdAt,
-      pages: storedPages,
-      pdfPath: pdfPath,
-    );
   }
 
-  Future<DocumentRecord> importPickedFile(PlatformFile picked) async {
-    final extension = (picked.extension ?? '').toLowerCase();
+  Future<DocumentRecord> importPickedFile(PlatformFile picked) =>
+      importFileStream(picked.name, picked.readAsByteStream());
+
+  Future<DocumentRecord> importFileStream(
+    String fileName,
+    Stream<List<int>> bytes,
+  ) async {
+    final extension = path
+        .extension(fileName)
+        .replaceFirst('.', '')
+        .toLowerCase();
     if (!const ['pdf', 'jpg', 'jpeg', 'png'].contains(extension)) {
       throw const FormatException('Choose a PDF, JPG, or PNG file.');
     }
     final id = _uuid.v4();
-    final root = await getApplicationDocumentsDirectory();
+    final root = await _documentsDirectory();
     final directory = Directory(path.join(root.path, 'TAMAD', id));
     await directory.create(recursive: true);
     try {
-      final name = sanitizeFileName(path.basenameWithoutExtension(picked.name));
+      final name = sanitizeFileName(path.basenameWithoutExtension(fileName));
       final inputPath = path.join(directory.path, 'original.$extension');
       final input = File(inputPath);
       final sink = input.openWrite();
       try {
-        await sink.addStream(picked.readAsByteStream());
+        await sink.addStream(bytes);
       } finally {
         await sink.close();
       }
@@ -231,10 +277,10 @@ class DocumentRepository {
       throw StateError('Page ${pageIndex + 1} is not a readable image.');
     }
     final rotated = image_lib.copyRotate(decoded, angle: 90);
-    await page.writeAsBytes(
-      image_lib.encodeJpg(rotated, quality: 92),
-      flush: true,
-    );
+    final encoded = path.extension(page.path).toLowerCase() == '.png'
+        ? image_lib.encodePng(rotated)
+        : image_lib.encodeJpg(rotated, quality: 92);
+    await page.writeAsBytes(encoded, flush: true);
     return rebuild(document);
   }
 

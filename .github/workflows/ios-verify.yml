@@ -22,3 +22,36 @@ jobs:
         run: flutter test
       - name: Compile iOS without code signing
         run: flutter build ios --release --no-codesign
+      - name: Compile iPad simulator app
+        run: flutter build ios --debug --simulator --no-pub
+      - name: Install and launch on iPad simulator
+        run: |
+          DEVICE_ID=$(python3 - <<'PY'
+          import json
+          import subprocess
+
+          data = json.loads(subprocess.check_output(
+              ['xcrun', 'simctl', 'list', 'devices', 'available', '--json']))
+          ipads = [device for runtime in data['devices'].values()
+                   for device in runtime if 'iPad' in device['name']]
+          if not ipads:
+              raise SystemExit('No iPad simulator is available on this runner')
+          selected = next((device for device in ipads
+                           if 'iPad mini (6th generation)' in device['name']),
+                          ipads[0])
+          print(selected['udid'])
+          PY
+          )
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl install "$DEVICE_ID" build/ios/iphonesimulator/Runner.app
+          xcrun simctl launch "$DEVICE_ID" com.tamad.tamad
+          sleep 15
+          xcrun simctl io "$DEVICE_ID" screenshot ipad-simulator.png
+      - name: Save iPad screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipad-simulator-screenshot
+          path: ipad-simulator.png
+          if-no-files-found: ignore

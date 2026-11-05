@@ -283,10 +283,7 @@ class HomeScreen extends ConsumerWidget {
                   style: Theme.of(context).textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text('Stored locally'),
-                ),
+                const Text('Stored locally'),
               ],
             ),
             const SizedBox(height: 8),
@@ -834,15 +831,31 @@ class _ToolCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(child: Icon(icon)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Text(subtitle),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(child: Icon(icon)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(subtitle),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(onPressed: onTap, child: Text(actionLabel)),
+            ),
+          ],
         ),
-        trailing: TextButton(onPressed: onTap, child: Text(actionLabel)),
       ),
     );
   }
@@ -884,7 +897,7 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Android scanning uses Google Play services; iPhone scanning uses Apple VisionKit. OCR runs on-device.',
           ),
           const SizedBox(height: 18),
-          const Center(child: Text('TAMAD 1.2.1 (4)')),
+          const Center(child: Text('TAMAD 1.2.2 (5)')),
         ],
       ),
     );
