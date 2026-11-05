@@ -174,7 +174,7 @@ void main() {
         Stream.value(image_lib.encodePng(original)),
       );
       final filtered = await repository.applyFilter(
-        record,
+        record.copyWith(ocrText: 'Removed text'),
         0,
         PageFilter.grayscale,
       );
@@ -183,6 +183,7 @@ void main() {
         0,
         const CropBounds(0, 0, 0.5, 1),
       );
+      expect(cropped.ocrText, isEmpty);
       final restored = await repository.applyFilter(
         cropped,
         0,

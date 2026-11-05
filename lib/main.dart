@@ -972,7 +972,7 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Android scanning uses Google Play services; iPhone scanning uses Apple VisionKit. OCR runs on-device.',
           ),
           const SizedBox(height: 18),
-          const Center(child: Text('TAMAD 1.2.4 (7)')),
+          const Center(child: Text('TAMAD 1.2.5 (8)')),
         ],
       ),
     );

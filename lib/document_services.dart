@@ -398,7 +398,8 @@ class DocumentRepository {
         await original.writeAsBytes(croppedOriginal, flush: true);
       }
       await page.writeAsBytes(croppedPage, flush: true);
-      return await rebuild(document);
+      final rebuilt = await rebuild(document);
+      return rebuilt.copyWith(ocrText: '');
     } catch (_) {
       await page.writeAsBytes(previousBytes, flush: true);
       if (originalBytes != null) {
