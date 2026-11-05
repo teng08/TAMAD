@@ -32,6 +32,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: 'build-tools;36.0.0'
       - name: Download exact published APK and check SHA-256
         run: |
           curl --fail --location --retry 3 \
@@ -41,11 +44,11 @@ jobs:
           unzip -tq tamad-arm64.apk > /dev/null
       - name: Check Android signature, package, and ARM64 ABI
         run: |
-          sdkmanager --install 'build-tools;36.0.0' > /dev/null
-          SIGNATURE="$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs tamad-arm64.apk)"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/.android/sdk}}"
+          SIGNATURE="$("$SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs tamad-arm64.apk)"
           printf '%s\n' "$SIGNATURE"
           printf '%s\n' "$SIGNATURE" | grep -Fq 'Verified using v2 scheme (APK Signature Scheme v2): true'
-          BADGING="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging tamad-arm64.apk)"
+          BADGING="$("$SDK_ROOT/build-tools/36.0.0/aapt" dump badging tamad-arm64.apk)"
           printf '%s\n' "$BADGING" | grep -E '^(package:|sdkVersion:|native-code:)'
           printf '%s\n' "$BADGING" | grep -Fq "package: name='com.tamad.tamad'"
           printf '%s\n' "$BADGING" | grep -Fq "versionName='${RELEASE_TAG#v}'"
