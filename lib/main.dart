@@ -6,11 +6,12 @@ import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'crop_page_screen.dart';
 import 'document_record.dart';
 import 'document_services.dart';
 import 'document_state.dart';
 
-enum _PageAction { rotate, original, enhance, grayscale, blackWhite }
+enum _PageAction { crop, rotate, original, enhance, grayscale, blackWhite }
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -590,6 +591,54 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
     }
   }
 
+  Future<void> _editPage(
+    DocumentRecord document,
+    int index,
+    _PageAction action,
+  ) async {
+    CropBounds? bounds;
+    if (action == _PageAction.crop) {
+      bounds = await Navigator.of(context).push<CropBounds>(
+        MaterialPageRoute(
+          builder: (_) => CropPageScreen(pagePath: document.pages[index]),
+        ),
+      );
+      if (!mounted || bounds == null) return;
+    }
+    await _run(() async {
+      final controller = ref.read(documentsProvider.notifier);
+      switch (action) {
+        case _PageAction.crop:
+          await controller.crop(document.id, index, bounds!);
+          break;
+        case _PageAction.rotate:
+          await controller.rotate(document.id, index);
+          break;
+        case _PageAction.original:
+          await controller.applyFilter(document.id, index, PageFilter.original);
+          break;
+        case _PageAction.enhance:
+          await controller.applyFilter(document.id, index, PageFilter.enhance);
+          break;
+        case _PageAction.grayscale:
+          await controller.applyFilter(
+            document.id,
+            index,
+            PageFilter.grayscale,
+          );
+          break;
+        case _PageAction.blackWhite:
+          await controller.applyFilter(
+            document.id,
+            index,
+            PageFilter.blackWhite,
+          );
+          break;
+      }
+      await FileImage(File(document.pages[index])).evict();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final items =
@@ -730,41 +779,13 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
                             tooltip: 'Edit page',
                             enabled: !_working,
                             icon: const Icon(Icons.tune_rounded),
-                            onSelected: (action) => _run(() async {
-                              final controller = ref.read(
-                                documentsProvider.notifier,
-                              );
-                              await switch (action) {
-                                _PageAction.rotate => controller.rotate(
-                                  document.id,
-                                  index,
-                                ),
-                                _PageAction.original => controller.applyFilter(
-                                  document.id,
-                                  index,
-                                  PageFilter.original,
-                                ),
-                                _PageAction.enhance => controller.applyFilter(
-                                  document.id,
-                                  index,
-                                  PageFilter.enhance,
-                                ),
-                                _PageAction.grayscale => controller.applyFilter(
-                                  document.id,
-                                  index,
-                                  PageFilter.grayscale,
-                                ),
-                                _PageAction.blackWhite =>
-                                  controller.applyFilter(
-                                    document.id,
-                                    index,
-                                    PageFilter.blackWhite,
-                                  ),
-                              };
-                              await FileImage(File(document.pages[index]))
-                                  .evict();
-                            }),
+                            onSelected: (action) =>
+                                _editPage(document, index, action),
                             itemBuilder: (_) => const [
+                              PopupMenuItem(
+                                value: _PageAction.crop,
+                                child: Text('Crop page'),
+                              ),
                               PopupMenuItem(
                                 value: _PageAction.rotate,
                                 child: Text('Rotate clockwise'),
@@ -951,7 +972,7 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Android scanning uses Google Play services; iPhone scanning uses Apple VisionKit. OCR runs on-device.',
           ),
           const SizedBox(height: 18),
-          const Center(child: Text('TAMAD 1.2.3 (6)')),
+          const Center(child: Text('TAMAD 1.2.4 (7)')),
         ],
       ),
     );

@@ -161,6 +161,63 @@ void main() {
   );
 
   test(
+    'manual crop keeps the same area in filtered and original pages',
+    () async {
+      final original = image_lib.Image(width: 4, height: 2);
+      for (var y = 0; y < 2; y++) {
+        for (var x = 0; x < 4; x++) {
+          original.setPixelRgb(x, y, x < 2 ? 220 : 10, 20, x < 2 ? 10 : 220);
+        }
+      }
+      final record = await repository.importFileStream(
+        'Wide page.png',
+        Stream.value(image_lib.encodePng(original)),
+      );
+      final filtered = await repository.applyFilter(
+        record,
+        0,
+        PageFilter.grayscale,
+      );
+      final cropped = await repository.crop(
+        filtered,
+        0,
+        const CropBounds(0, 0, 0.5, 1),
+      );
+      final restored = await repository.applyFilter(
+        cropped,
+        0,
+        PageFilter.original,
+      );
+      final decoded = image_lib.decodePng(
+        await File(restored.pages.single).readAsBytes(),
+      )!;
+
+      expect(decoded.width, 2);
+      expect(decoded.height, 2);
+      expect(decoded.getPixel(0, 0).r, greaterThan(decoded.getPixel(0, 0).b));
+      expect(decoded.getPixel(1, 1).r, greaterThan(decoded.getPixel(1, 1).b));
+      expect(
+        ascii.decode(
+          (await File(restored.pdfPath).readAsBytes()).take(5).toList(),
+        ),
+        '%PDF-',
+      );
+    },
+  );
+
+  test('manual crop rejects bounds outside the image', () async {
+    final image = image_lib.Image(width: 2, height: 2);
+    final record = await repository.importFileStream(
+      'Page.png',
+      Stream.value(image_lib.encodePng(image)),
+    );
+    await expectLater(
+      repository.crop(record, 0, const CropBounds(-0.1, 0, 0.8, 1)),
+      throwsArgumentError,
+    );
+  });
+
+  test(
     'invalid image import removes its temporary document directory',
     () async {
       await expectLater(

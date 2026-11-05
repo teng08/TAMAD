@@ -80,6 +80,12 @@ class DocumentsController extends AsyncNotifier<List<DocumentRecord>> {
     await _replace(id, (_) => rebuilt);
   }
 
+  Future<void> crop(String id, int pageIndex, CropBounds bounds) async {
+    final document = _find(id);
+    final rebuilt = await _repository.crop(document, pageIndex, bounds);
+    await _replace(id, (_) => rebuilt);
+  }
+
   Future<void> delete(String id) async {
     final document = _find(id);
     await _repository.deleteFiles(document);

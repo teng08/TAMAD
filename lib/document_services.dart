@@ -21,6 +21,27 @@ import 'document_record.dart';
 
 enum PageFilter { original, enhance, grayscale, blackWhite }
 
+class CropBounds {
+  const CropBounds(this.left, this.top, this.right, this.bottom);
+
+  final double left;
+  final double top;
+  final double right;
+  final double bottom;
+
+  bool get isValid =>
+      left.isFinite &&
+      top.isFinite &&
+      right.isFinite &&
+      bottom.isFinite &&
+      left >= 0 &&
+      top >= 0 &&
+      right <= 1 &&
+      bottom <= 1 &&
+      left < right &&
+      top < bottom;
+}
+
 class ScannerService {
   Future<PlatformFile?> pickDocumentFile() => FilePicker.pickFile(
     type: FileType.custom,
@@ -349,6 +370,44 @@ class DocumentRepository {
     }
   }
 
+  Future<DocumentRecord> crop(
+    DocumentRecord document,
+    int pageIndex,
+    CropBounds bounds,
+  ) async {
+    if (!bounds.isValid) {
+      throw ArgumentError('Choose a valid crop area inside the page.');
+    }
+    final page = File(document.pages[pageIndex]);
+    final original = File('${page.path}.original');
+    final previousBytes = await page.readAsBytes();
+    final originalBytes = await original.exists()
+        ? await original.readAsBytes()
+        : null;
+    final extension = path.extension(page.path).toLowerCase();
+    final croppedPage = await Isolate.run(
+      () => _cropPageBytes(previousBytes, bounds, extension),
+    );
+    final croppedOriginal = originalBytes == null
+        ? null
+        : await Isolate.run(
+            () => _cropPageBytes(originalBytes, bounds, extension),
+          );
+    try {
+      if (croppedOriginal != null) {
+        await original.writeAsBytes(croppedOriginal, flush: true);
+      }
+      await page.writeAsBytes(croppedPage, flush: true);
+      return await rebuild(document);
+    } catch (_) {
+      await page.writeAsBytes(previousBytes, flush: true);
+      if (originalBytes != null) {
+        await original.writeAsBytes(originalBytes, flush: true);
+      }
+      rethrow;
+    }
+  }
+
   Future<void> deleteFiles(DocumentRecord document) async {
     final directory = Directory(path.dirname(document.pdfPath));
     if (await directory.exists()) await directory.delete(recursive: true);
@@ -423,4 +482,26 @@ List<int> _filterPageBytes(
       break;
   }
   return _encodePage(image, extension);
+}
+
+List<int> _cropPageBytes(
+  Uint8List sourceBytes,
+  CropBounds bounds,
+  String extension,
+) {
+  final image = image_lib.decodeImage(sourceBytes);
+  if (image == null) {
+    throw const FormatException('This page is not a readable image.');
+  }
+  final x = (bounds.left * image.width).floor().clamp(0, image.width - 1);
+  final y = (bounds.top * image.height).floor().clamp(0, image.height - 1);
+  final right = (bounds.right * image.width).ceil().clamp(x + 1, image.width);
+  final bottom = (bounds.bottom * image.height).ceil().clamp(
+    y + 1,
+    image.height,
+  );
+  return _encodePage(
+    image_lib.copyCrop(image, x: x, y: y, width: right - x, height: bottom - y),
+    extension,
+  );
 }

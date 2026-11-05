@@ -97,5 +97,15 @@ void main() {
     expect(find.text('Black and white'), findsOneWidget);
     expect(find.text('Original color'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Crop page'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      find.text('Drag the corners to choose the part to keep.'),
+      findsOneWidget,
+    );
+    expect(find.text('Save crop'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
