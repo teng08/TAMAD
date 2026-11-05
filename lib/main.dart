@@ -587,8 +587,28 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
     );
     controller.dispose();
     if (name != null && name.isNotEmpty) {
-      await ref.read(documentsProvider.notifier).rename(document.id, name);
+      await _run(
+        () => ref.read(documentsProvider.notifier).rename(document.id, name),
+      );
     }
+  }
+
+  Future<void> _sharePdf(
+    DocumentRecord document,
+    BuildContext buttonContext,
+  ) async {
+    final box = buttonContext.findRenderObject() as RenderBox?;
+    await _run(
+      () => SharePlus.instance.share(
+        ShareParams(
+          text: 'Scanned with TAMAD',
+          files: [XFile(document.pdfPath)],
+          sharePositionOrigin: box == null
+              ? null
+              : box.localToGlobal(Offset.zero) & box.size,
+        ),
+      ),
+    );
   }
 
   Future<void> _editPage(
@@ -676,17 +696,14 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
                     icon: const Icon(Icons.picture_as_pdf_rounded),
                     label: const Text('Open PDF'),
                   ),
-                  OutlinedButton.icon(
-                    onPressed: _working
-                        ? null
-                        : () => SharePlus.instance.share(
-                            ShareParams(
-                              text: 'Scanned with TAMAD',
-                              files: [XFile(document.pdfPath)],
-                            ),
-                          ),
-                    icon: const Icon(Icons.share_rounded),
-                    label: const Text('Share'),
+                  Builder(
+                    builder: (buttonContext) => OutlinedButton.icon(
+                      onPressed: _working
+                          ? null
+                          : () => _sharePdf(document, buttonContext),
+                      icon: const Icon(Icons.share_rounded),
+                      label: const Text('Share'),
+                    ),
                   ),
                   if (!document.isImportedPdf)
                     OutlinedButton.icon(
@@ -972,7 +989,7 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Android scanning uses Google Play services; iPhone scanning uses Apple VisionKit. OCR runs on-device.',
           ),
           const SizedBox(height: 18),
-          const Center(child: Text('TAMAD 1.2.5 (8)')),
+          const Center(child: Text('TAMAD 1.2.6 (9)')),
         ],
       ),
     );

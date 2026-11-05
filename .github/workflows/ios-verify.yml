@@ -24,6 +24,12 @@ jobs:
         run: flutter build ios --release --no-codesign
       - name: Compile iPad simulator app
         run: flutter build ios --debug --simulator --no-pub
+      - name: Check iPad app identity and icon catalog
+        run: |
+          APP=build/ios/iphonesimulator/Runner.app
+          test "$(plutil -extract CFBundleDisplayName raw -o - "$APP/Info.plist")" = TAMAD
+          test "$(plutil -extract CFBundleIdentifier raw -o - "$APP/Info.plist")" = com.tamad.tamad
+          test -s "$APP/Assets.car"
       - name: Install and launch on iPad simulator
         run: |
           DEVICE_ID=$(python3 - <<'PY'

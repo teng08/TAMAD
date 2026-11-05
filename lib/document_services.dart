@@ -151,10 +151,31 @@ class DocumentRepository {
 
   Future<void> save(List<DocumentRecord> records) async {
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(
+    final saved = await preferences.setString(
       _metadataKey,
       jsonEncode(records.map((item) => item.toJson()).toList()),
     );
+    if (!saved) throw StateError('The document library could not be saved.');
+  }
+
+  Future<DocumentRecord> renamePdf(DocumentRecord document, String name) async {
+    final requestedName = name.trim().replaceFirst(
+      RegExp(r'\.pdf$', caseSensitive: false),
+      '',
+    );
+    final safeName = sanitizeFileName(requestedName);
+    final nextPath = path.join(path.dirname(document.pdfPath), '$safeName.pdf');
+    if (nextPath == document.pdfPath) {
+      return document.copyWith(name: safeName);
+    }
+    if (await File(nextPath).exists()) {
+      throw FileSystemException(
+        'A PDF with this name already exists.',
+        nextPath,
+      );
+    }
+    await File(document.pdfPath).rename(nextPath);
+    return document.copyWith(name: safeName, pdfPath: nextPath);
   }
 
   Future<DocumentRecord> importScan(

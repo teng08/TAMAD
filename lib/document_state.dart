@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'document_record.dart';
@@ -47,10 +49,16 @@ class DocumentsController extends AsyncNotifier<List<DocumentRecord>> {
   }
 
   Future<void> rename(String id, String name) async {
-    await _replace(
-      id,
-      (item) => item.copyWith(name: DocumentRepository.sanitizeFileName(name)),
-    );
+    final previous = _find(id);
+    final renamed = await _repository.renamePdf(previous, name);
+    try {
+      await _replace(id, (_) => renamed);
+    } catch (_) {
+      if (renamed.pdfPath != previous.pdfPath) {
+        await File(renamed.pdfPath).rename(previous.pdfPath);
+      }
+      rethrow;
+    }
   }
 
   Future<void> recognizeText(String id) async {

@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image/image.dart' as image_lib;
 import 'package:path/path.dart' as path;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tamad/document_services.dart';
+import 'package:tamad/document_state.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +45,65 @@ void main() {
     expect(await File(record.pdfPath).readAsBytes(), originalBytes);
     expect((await repository.load()).single.name, 'Contract');
   });
+
+  test(
+    'renaming a two-photo scan changes its saved and shared PDF filename',
+    () async {
+      final image = image_lib.Image(width: 3, height: 2);
+      image.setPixelRgb(0, 0, 200, 20, 20);
+      final first = File(path.join(temporaryDirectory.path, 'first.png'));
+      final second = File(path.join(temporaryDirectory.path, 'second.png'));
+      await first.writeAsBytes(image_lib.encodePng(image));
+      await second.writeAsBytes(image_lib.encodePng(image));
+      final record = await repository.importScan([first.path, second.path]);
+      await repository.save([record]);
+      final oldPath = record.pdfPath;
+      final container = ProviderContainer(
+        overrides: [repositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+      await container.read(documentsProvider.future);
+
+      await container
+          .read(documentsProvider.notifier)
+          .rename(record.id, 'Family papers.pdf');
+
+      final renamed = (await repository.load()).single;
+      expect(renamed.name, 'Family papers');
+      expect(path.basename(renamed.pdfPath), 'Family papers.pdf');
+      expect(await File(renamed.pdfPath).exists(), isTrue);
+      expect(await File(oldPath).exists(), isFalse);
+      expect(renamed.pages, hasLength(2));
+      expect(
+        ascii.decode(
+          (await File(renamed.pdfPath).readAsBytes()).take(5).toList(),
+        ),
+        '%PDF-',
+      );
+      final rebuilt = await repository.rebuild(renamed);
+      expect(path.basename(rebuilt.pdfPath), 'Family papers.pdf');
+    },
+  );
+
+  test(
+    'renaming an imported PDF preserves its bytes and persists the filename',
+    () async {
+      final pdf = pw.Document();
+      pdf.addPage(pw.Page(build: (_) => pw.Text('Imported page')));
+      final originalBytes = await pdf.save();
+      final record = await repository.importFileStream(
+        'Scanner.pdf',
+        Stream.value(originalBytes),
+      );
+      final renamed = await repository.renamePdf(record, 'Project notes');
+      await repository.save([renamed]);
+
+      expect(path.basename(renamed.pdfPath), 'Project notes.pdf');
+      expect(await File(record.pdfPath).exists(), isFalse);
+      expect(await File(renamed.pdfPath).readAsBytes(), originalBytes);
+      expect((await repository.load()).single.pdfPath, renamed.pdfPath);
+    },
+  );
 
   test('imports and rotates PNG while keeping PNG file format', () async {
     final original = image_lib.Image(width: 2, height: 1);
