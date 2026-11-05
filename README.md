@@ -8,10 +8,13 @@ Use the app download below. GitHub's **Code → Download ZIP** contains source c
 
 | Phone | Download | Minimum system |
 | --- | --- | --- |
-| Android | [Download TAMAD for Android (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.0/TAMAD-v1.2.0-android.apk) | Android 7.0 or newer |
+| OPPO A96 and other ARM64 Android phones | [Download smaller Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.1/TAMAD-v1.2.1-arm64.apk) | Android 7.0 or newer |
+| Other Android phones | [Download universal Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.1/TAMAD-v1.2.1-android.apk) | Android 7.0 or newer |
 | iPhone | Installable download not available yet | iOS 15.5 or newer |
 
-On Android, download the APK on your phone, open it from Downloads, and follow Android's installation prompt. This preview is signed with an Android debug certificate, so it is for testing rather than Play Store distribution. The [SHA-256 checksum](https://github.com/teng08/TAMAD/releases/download/v1.2.0/TAMAD-v1.2.0-android.apk.sha256) is provided alongside it.
+On an OPPO A96, choose the smaller ARM64 APK. Download it on your phone, open it from Downloads, and follow Android's installation prompt. These previews use an Android debug certificate, so they are for testing rather than Play Store distribution. [Checksums for both APKs](https://github.com/teng08/TAMAD/releases/tag/v1.2.1) are attached to the release.
+
+The v1.2.1 universal APK installed and launched in Android 13 and 15 emulators. Installation on the OPPO A96 still needs to be confirmed. If a TAMAD app is already on your phone, do not remove it before backing up any saved documents; removing it can erase the app's private files.
 
 The iOS app passes a macOS build check, but an installable iPhone release requires Apple code signing and distribution through TestFlight or the App Store. The source-code ZIP and the unsigned iOS build cannot be installed on an iPhone. See [GitHub Releases](https://github.com/teng08/TAMAD/releases) for published downloads.
 

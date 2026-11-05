@@ -78,6 +78,7 @@ The Windows host has no usable Android emulator or connected phone, and no iPhon
 - Universal APK: 88,131,882 bytes; SHA-256 `E593F830E0E501FCEB20D7197E70573AF69439F42C93FD20AC636B70B54908C4`.
 - ARM64-targeted APK: 51,480,592 bytes; SHA-256 `808E8E288CCF0B997E39E6220D3248FF6A3F6EEC4BD20DC034EF13E91BBF1326`. It contains the ARM64 Flutter engine for phones such as the OPPO A96; it is not for x86 devices.
 - `apksigner verify` and 16 KiB `zipalign` checks passed on both APKs. The packaged launcher icon was extracted and visually checked against the supplied logo.
-- iOS macOS build for this version: pending.
+- [macOS iOS build 42014712264](https://github.com/teng08/TAMAD/actions/runs/42014712264) passed package resolution, analysis, tests, and `flutter build ios --release --no-codesign` with the new iOS icon.
+- The published v1.2.1 universal APK passed checksum verification, installation, and launch in [Android 13 and 15 emulators](https://github.com/teng08/TAMAD/actions/runs/42015957587). GitHub's release digests matched both local APKs, and both public download links returned HTTP 200.
 
 Neither APK has been installed on the user's OPPO A96 yet. Do not treat emulator success as proof of a device-specific fix.
