@@ -8,15 +8,15 @@ Use the app download below. GitHub's **Code → Download ZIP** contains source c
 
 | Phone | Download | Minimum system |
 | --- | --- | --- |
-| OPPO A96 and other ARM64 Android phones | [Download smaller Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.1/TAMAD-v1.2.1-arm64.apk) | Android 7.0 or newer |
-| Other Android phones | [Download universal Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.1/TAMAD-v1.2.1-android.apk) | Android 7.0 or newer |
-| iPhone | Installable download not available yet | iOS 15.5 or newer |
+| OPPO A96 and other ARM64 Android phones | [Download smaller Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.2/TAMAD-v1.2.2-arm64.apk) | Android 7.0 or newer |
+| Other Android phones | [Download universal Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.2/TAMAD-v1.2.2-android.apk) | Android 7.0 or newer |
+| iPhone and iPad | Installable download not available yet | iOS/iPadOS 15.5 or newer |
 
-On an OPPO A96, choose the smaller ARM64 APK. Download it on your phone, open it from Downloads, and follow Android's installation prompt. These previews use an Android debug certificate, so they are for testing rather than Play Store distribution. [Checksums for both APKs](https://github.com/teng08/TAMAD/releases/tag/v1.2.1) are attached to the release.
+On an OPPO A96, choose the smaller ARM64 APK. Download it on your phone, open it from Downloads, and follow Android's installation prompt. These previews use an Android debug certificate, so they are for testing rather than Play Store distribution. [Checksums for both APKs](https://github.com/teng08/TAMAD/releases/tag/v1.2.2) are listed in the release.
 
-The v1.2.1 universal APK installed and launched in Android 13 and 15 emulators. Installation on the OPPO A96 still needs to be confirmed. If a TAMAD app is already on your phone, do not remove it before backing up any saved documents; removing it can erase the app's private files.
+The v1.2.2 APKs have verified Android signatures. The universal APK is being checked on Android emulators; installation on the OPPO A96 still needs to be confirmed. If a TAMAD app is already on your phone, do not remove it before backing up any saved documents; removing it can erase the app's private files.
 
-The iOS app passes a macOS build check, but an installable iPhone release requires Apple code signing and distribution through TestFlight or the App Store. The source-code ZIP and the unsigned iOS build cannot be installed on an iPhone. See [GitHub Releases](https://github.com/teng08/TAMAD/releases) for published downloads.
+The iOS app passes a macOS build check and launches in an iPad simulator, but an installable iPhone or iPad release requires Apple code signing and distribution through TestFlight or the App Store. The source-code ZIP and the unsigned iOS build cannot be installed on an iPhone or iPad. See [GitHub Releases](https://github.com/teng08/TAMAD/releases) for published downloads.
 
 ## Working in this release
 
@@ -32,7 +32,7 @@ The iOS app passes a macOS build check, but an installable iPhone release requir
 - Two-page ID-card scanning mode.
 - Original Material 3 UI with phone-controlled light and dark themes.
 
-The Android scanner UI and model are provided by Google Play services and may need a one-time module download. iOS uses the native VisionKit document camera and requires a real iPhone for camera scanning. Imported PDFs retain their original pages; page rotation and OCR are available for image scans and imported images. Merge/split, signatures, annotation, password protection, recycle bin, QR scanning, and searchable PDF text layers are visibly marked as future work rather than shipped as non-working buttons.
+The Android scanner UI and model are provided by Google Play services and may need a one-time module download. iOS uses the native VisionKit document camera and requires a real iPhone or iPad for camera scanning. Imported PDFs retain their original pages; page rotation and OCR are available for image scans and imported images. Merge/split, signatures, annotation, password protection, recycle bin, QR scanning, and searchable PDF text layers are visibly marked as future work rather than shipped as non-working buttons.
 
 ## Build
 
@@ -59,4 +59,4 @@ flutter build ios --release --no-codesign
 flutter run -d <your-iphone-device-id>
 ```
 
-The iOS minimum is 15.5 because the ML Kit OCR plugin requires it. Add your development team in Xcode to install the app on an iPhone, then test camera capture, photo import, OCR, PDF open/share, page rotation, and reorder. This Windows workspace cannot compile or run the iOS target, so iOS is prepared but not verified on hardware.
+The iOS minimum is 15.5 because the ML Kit OCR plugin requires it. Add an Apple development team in Xcode to install the app on an iPhone or iPad, then test camera capture, photo import, OCR, PDF open/share, page rotation, and reorder. The GitHub macOS workflow compiles the iOS target and launches it in an iPad simulator; iOS is not verified on physical hardware.

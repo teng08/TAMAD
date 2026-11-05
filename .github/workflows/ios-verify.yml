@@ -45,8 +45,11 @@ jobs:
           xcrun simctl boot "$DEVICE_ID"
           xcrun simctl bootstatus "$DEVICE_ID" -b
           xcrun simctl install "$DEVICE_ID" build/ios/iphonesimulator/Runner.app
-          xcrun simctl launch "$DEVICE_ID" com.tamad.tamad
-          sleep 15
+          LAUNCH_OUTPUT=$(xcrun simctl launch "$DEVICE_ID" com.tamad.tamad)
+          echo "$LAUNCH_OUTPUT"
+          APP_PID=${LAUNCH_OUTPUT##*: }
+          sleep 60
+          kill -0 "$APP_PID"
           xcrun simctl io "$DEVICE_ID" screenshot ipad-simulator.png
       - name: Save iPad screenshot
         if: always()
