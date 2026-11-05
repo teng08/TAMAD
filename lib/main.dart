@@ -241,16 +241,13 @@ class HomeScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.document_scanner,
-                    color: Colors.white,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/branding/tamad-icon.png',
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -887,7 +884,7 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Android scanning uses Google Play services; iPhone scanning uses Apple VisionKit. OCR runs on-device.',
           ),
           const SizedBox(height: 18),
-          const Center(child: Text('TAMAD 1.2.0 (3)')),
+          const Center(child: Text('TAMAD 1.2.1 (4)')),
         ],
       ),
     );
