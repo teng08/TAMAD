@@ -28,6 +28,16 @@ class DocumentsController extends AsyncNotifier<List<DocumentRecord>> {
     return document;
   }
 
+  Future<DocumentRecord?> importFromGallery({int pageLimit = 30}) async {
+    final images = await ref
+        .read(scannerProvider)
+        .importFromGallery(pageLimit: pageLimit);
+    if (images.isEmpty) return null;
+    final document = await _repository.importScan(images);
+    await _commit([document, ...?state.value]);
+    return document;
+  }
+
   Future<void> rename(String id, String name) async {
     await _replace(
       id,

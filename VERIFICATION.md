@@ -1,6 +1,6 @@
 # TAMAD verification report
 
-This file records reproducible checks for the source currently in the repository. It is updated with the final command results after the release build.
+This file records reproducible checks and their limits. The Android 1.0.0 results below refer to the original APK. The Android and iOS 1.1.0 changes are recorded separately.
 
 ## Scope
 
@@ -38,3 +38,17 @@ flutter build apk --release
 No Android phone was connected. A matching Android 36 Google Play emulator image was installed and two launch paths were attempted. The host reported `Android Emulator hypervisor driver is not installed on this machine`; the software-only fallback exited before appearing in `adb devices`. Installing or enabling a Windows hypervisor driver would change system virtualization/security configuration, so it was not done implicitly.
 
 Consequently, the APK's installation signature, manifest, package metadata, dependency resolution, static analysis, unit tests, release compilation, and archive integrity are verified. Camera capture, Play-services edge detection, physical-device OCR, file opening, and the Android share sheet still require a compatible Android device for end-to-end runtime verification.
+
+## Version 1.1.0: iOS source and updated Android APK
+
+- Added the generated Flutter iOS runner and Apple VisionKit document camera routing for iPhone. The minimum iOS version is 15.5 for the OCR plugin.
+- Added multi-photo gallery import on Android and iOS. Gallery photos are not automatically perspective-corrected.
+- `flutter pub get`: passed.
+- `flutter analyze --no-pub`: passed, no issues found.
+- `flutter test --no-pub`: passed, 2/2 tests. These tests cover metadata and filename handling; they are not camera or OCR integration tests.
+- `flutter build apk --release --no-pub`: passed. Updated APK size: 87,648,330 bytes.
+- Android `apksigner verify`: passed (v2 signature, debug certificate).
+- Android package: `com.tamad.tamad`, version `1.1.0` (`versionCode 2`), minimum SDK 24, target SDK 36.
+- Updated APK SHA-256: `DED10B7D0977EB1FD114B43D48CFE7C02102B8725ECC4E8172FF2E701E7B480E`.
+
+The iOS target cannot be built locally on Windows. `.github/workflows/ios-verify.yml` runs a macOS no-signing iOS compilation on GitHub after push; its result must be checked separately. A no-signing compilation still cannot test physical camera behavior, photo permissions, document crop quality, OCR quality, PDF opening, or sharing. Those need a real iPhone and Apple development signing.

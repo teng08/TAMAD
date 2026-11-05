@@ -102,10 +102,38 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     }
   }
 
+  Future<void> _importGallery() async {
+    if (_scanning) return;
+    setState(() => _scanning = true);
+    try {
+      final document = await ref
+          .read(documentsProvider.notifier)
+          .importFromGallery();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            document == null
+                ? 'No photos were selected.'
+                : '${document.pageCount}-page PDF saved locally.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not import photos: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _scanning = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      HomeScreen(onScan: _scan),
+      HomeScreen(onScan: _scan, onImportGallery: _importGallery),
       const LibraryScreen(),
       ToolsScreen(onIdScan: () => _scan(pageLimit: 2, name: 'ID card')),
       const SettingsScreen(),
@@ -161,9 +189,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 }
 
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({required this.onScan, super.key});
+  const HomeScreen({
+    required this.onScan,
+    required this.onImportGallery,
+    super.key,
+  });
 
   final Future<void> Function({int pageLimit, String? name}) onScan;
+  final VoidCallback onImportGallery;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -207,7 +240,10 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 28),
-            _ScanCard(onTap: () => onScan(pageLimit: 30)),
+            _ScanCard(
+              onTap: () => onScan(pageLimit: 30),
+              onImportGallery: onImportGallery,
+            ),
             const SizedBox(height: 28),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -263,8 +299,9 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _ScanCard extends StatelessWidget {
-  const _ScanCard({required this.onTap});
+  const _ScanCard({required this.onTap, required this.onImportGallery});
   final VoidCallback onTap;
+  final VoidCallback onImportGallery;
 
   @override
   Widget build(BuildContext context) {
@@ -305,7 +342,7 @@ class _ScanCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Automatic edges, perspective crop, cleanup filters, gallery import, and up to 30 pages in one pass.',
+                'Automatic edges and perspective crop, with multi-page PDF export.',
               ),
               const SizedBox(height: 18),
               const Wrap(
@@ -317,6 +354,12 @@ class _ScanCard extends StatelessWidget {
                   Chip(label: Text('Filters')),
                   Chip(label: Text('PDF')),
                 ],
+              ),
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                onPressed: onImportGallery,
+                icon: const Icon(Icons.photo_library_rounded),
+                label: const Text('Import photos'),
               ),
             ],
           ),
@@ -766,10 +809,10 @@ class SettingsScreen extends StatelessWidget {
           const _InfoRow(
             icon: Icons.info_outline_rounded,
             title: 'Scanner model',
-            subtitle: 'Google Play services may download the scanner module once; scanning and OCR then run on-device.',
+            subtitle: 'Android scanning uses Google Play services; iPhone scanning uses Apple VisionKit. OCR runs on-device.',
           ),
           const SizedBox(height: 18),
-          const Center(child: Text('TAMAD 1.0.0 (1)')),
+          const Center(child: Text('TAMAD 1.1.0 (2)')),
         ],
       ),
     );

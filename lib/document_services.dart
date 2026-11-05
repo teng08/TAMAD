@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:apple_vision_document_scanner/apple_vision_document_scanner.dart';
 import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image/image.dart' as image_lib;
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -16,6 +18,20 @@ import 'document_record.dart';
 
 class ScannerService {
   Future<List<String>> scan({int pageLimit = 30}) async {
+    if (Platform.isIOS) {
+      final images = await AppleVisionDocumentScanner().scan();
+      if (images.length > pageLimit) {
+        throw StateError(
+          'This scan has ${images.length} pages. The limit is $pageLimit. Please scan fewer pages.',
+        );
+      }
+      return images.map((file) => file.path).toList();
+    }
+    if (!Platform.isAndroid) {
+      throw UnsupportedError(
+        'Document scanning is available on Android and iOS.',
+      );
+    }
     final scanner = DocumentScanner(
       options: DocumentScannerOptions(
         documentFormats: const {DocumentFormat.jpeg},
@@ -30,6 +46,14 @@ class ScannerService {
     } finally {
       await scanner.close();
     }
+  }
+
+  Future<List<String>> importFromGallery({int pageLimit = 30}) async {
+    final images = await ImagePicker().pickMultiImage(
+      limit: pageLimit,
+      imageQuality: 90,
+    );
+    return images.map((file) => file.path).toList();
   }
 }
 

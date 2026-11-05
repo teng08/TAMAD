@@ -1,19 +1,21 @@
 # TAMAD
 
-TAMAD is an original, ad-free Android document scanner built with Flutter. It keeps scanned pages, generated PDFs, metadata, and recognized text in the app's local private storage.
+TAMAD is an original, ad-free Android and iOS document scanner built with Flutter. It keeps scanned pages, generated PDFs, metadata, and recognized text in the app's local private storage.
 
 ## Working in this release
 
-- Google ML Kit document capture with automatic edge detection, perspective correction, rotation, cleanup filters, gallery import, and batches of up to 30 pages.
+- Android: Google ML Kit document capture with automatic edge detection, perspective correction, rotation, cleanup filters, gallery import, and batches of up to 30 pages.
+- iOS: Apple VisionKit multi-page document camera with automatic crop and perspective correction. The iOS page limit is enforced when the scan finishes.
+- Separate multi-photo gallery import on both platforms. Imported photos are added as they appear; gallery import does not apply document edge detection.
 - Multi-page A4 PDF generation with no TAMAD watermark.
 - Local document library with name and OCR-text search.
 - Page reordering and 90-degree rotation with automatic PDF regeneration.
 - On-device Latin text recognition for English and Filipino text.
-- Open and share PDFs through Android apps.
+- Open and share PDFs through the phone's installed apps.
 - Two-page ID-card scanning mode.
 - Original Material 3 UI with phone-controlled light and dark themes.
 
-The scanner UI and model are provided by Google Play services and may need a one-time module download. Merge/split, signatures, annotation, password protection, recycle bin, QR scanning, and searchable PDF text layers are visibly marked as future work rather than shipped as non-working buttons.
+The Android scanner UI and model are provided by Google Play services and may need a one-time module download. iOS uses the native VisionKit document camera and requires a real iPhone for camera scanning. Merge/split, signatures, annotation, password protection, recycle bin, QR scanning, and searchable PDF text layers are visibly marked as future work rather than shipped as non-working buttons.
 
 ## Build
 
@@ -27,3 +29,17 @@ flutter build apk --release
 ```
 
 The release APK is written to `build/app/outputs/flutter-apk/app-release.apk`. The current release build uses Flutter's debug signing key so it is installable for testing; configure a private release keystore before Play Store distribution.
+
+## iOS build and device check
+
+On a Mac with Xcode, CocoaPods if required by Flutter, and an Apple development team configured:
+
+```sh
+flutter pub get
+flutter analyze
+flutter test
+flutter build ios --release --no-codesign
+flutter run -d <your-iphone-device-id>
+```
+
+The iOS minimum is 15.5 because the ML Kit OCR plugin requires it. Add your development team in Xcode to install the app on an iPhone, then test camera capture, photo import, OCR, PDF open/share, page rotation, and reorder. This Windows workspace cannot compile or run the iOS target, so iOS is prepared but not verified on hardware.
