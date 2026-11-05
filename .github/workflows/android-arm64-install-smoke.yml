@@ -1,0 +1,61 @@
+name: Verify ARM64 Android APK installation
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published GitHub release tag
+        required: true
+        type: string
+      apk_name:
+        description: ARM64 APK asset name
+        required: true
+        type: string
+      expected_sha256:
+        description: Expected SHA-256 of the APK
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm ARM64 host
+        run: test "$(uname -m)" = arm64
+      - name: Download release APK
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          APK_NAME: ${{ inputs.apk_name }}
+          EXPECTED_SHA256: ${{ inputs.expected_sha256 }}
+        run: |
+          curl --fail --location --retry 3 \
+            --output tamad-arm64.apk \
+            "https://github.com/${{ github.repository }}/releases/download/$RELEASE_TAG/$APK_NAME"
+          printf '%s  %s\n' "$EXPECTED_SHA256" tamad-arm64.apk | shasum -a 256 --check
+      - name: Install and launch on Android 13 ARM64 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: arm64-v8a
+          emulator-boot-timeout: 900
+          script: |
+            adb shell getprop ro.product.cpu.abi | grep -q arm64-v8a
+            adb install -r tamad-arm64.apk
+            adb shell pm path com.tamad.tamad
+            adb shell am start -n com.tamad.tamad/.MainActivity
+            sleep 45
+            adb shell pidof com.tamad.tamad
+            adb shell screencap -p /sdcard/tamad-arm64.png
+            adb pull /sdcard/tamad-arm64.png android-arm64.png
+      - name: Save emulator screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-arm64-screenshot
+          path: android-arm64.png
+          if-no-files-found: ignore
