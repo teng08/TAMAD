@@ -14,9 +14,9 @@ Use the app download below. GitHub's **Code → Download ZIP** contains source c
 
 On an OPPO A96, choose the smaller ARM64 APK. Download it on your phone, open it from Downloads, and follow Android's installation prompt. These previews use an Android debug certificate, so they are for testing rather than Play Store distribution. [Checksums for both APKs](https://github.com/teng08/TAMAD/releases/tag/v1.2.2) are listed in the release.
 
-The v1.2.2 APKs have verified Android signatures. The universal APK is being checked on Android emulators; installation on the OPPO A96 still needs to be confirmed. If a TAMAD app is already on your phone, do not remove it before backing up any saved documents; removing it can erase the app's private files.
+The v1.2.2 APKs have verified Android signatures. The published universal APK downloaded, installed, and launched in Android 7, 11, 13, and 15 emulators. Installation on the OPPO A96 still needs to be confirmed. If a TAMAD app is already on your phone, do not remove it before backing up any saved documents; removing it can erase the app's private files.
 
-The iOS app passes a macOS build check and launches in an iPad simulator, but an installable iPhone or iPad release requires Apple code signing and distribution through TestFlight or the App Store. The source-code ZIP and the unsigned iOS build cannot be installed on an iPhone or iPad. See [GitHub Releases](https://github.com/teng08/TAMAD/releases) for published downloads.
+The iOS app passes a macOS build check and renders its home screen in an iPad simulator, but an installable iPhone or iPad release requires Apple code signing and distribution through TestFlight or the App Store. The source-code ZIP and the unsigned iOS build cannot be installed on an iPhone or iPad. See the [verification report](docs/verification-v1.2.2.md) and [GitHub Releases](https://github.com/teng08/TAMAD/releases).
 
 ## Working in this release
 
