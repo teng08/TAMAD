@@ -8,15 +8,15 @@ Use the app download below. GitHub's **Code → Download ZIP** contains source c
 
 | Phone | Download | Minimum system |
 | --- | --- | --- |
-| OPPO A96 and other ARM64 Android phones | [Download smaller Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.5/TAMAD-v1.2.5-arm64.apk) | Android 7.0 or newer |
-| Other Android phones | [Download universal Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.5/TAMAD-v1.2.5-android.apk) | Android 7.0 or newer |
+| OPPO A96 and other ARM64 Android phones | [Download smaller Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.6/TAMAD-v1.2.6-arm64.apk) | Android 7.0 or newer |
+| Other Android phones | [Download universal Android app (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.6/TAMAD-v1.2.6-android.apk) | Android 7.0 or newer |
 | iPhone and iPad | Installable download not available yet | iOS/iPadOS 15.5 or newer |
 
-On an OPPO A96, choose the smaller ARM64 APK. Download it on your phone, open it from Downloads, and follow Android's installation prompt. These previews use an Android debug certificate, so they are for testing rather than Play Store distribution. [Checksums for both APKs](https://github.com/teng08/TAMAD/releases/tag/v1.2.5) are listed in the release.
+On an OPPO A96, choose the smaller ARM64 APK. Download it on your phone, open it from Downloads, and follow Android's installation prompt. These previews use an Android debug certificate, so they are for testing rather than Play Store distribution. [Checksums for both APKs](https://github.com/teng08/TAMAD/releases/tag/v1.2.6) are listed in the release.
 
-The v1.2.5 APKs have verified Android signatures. The exact universal APK installed and launched in Android 7, 11, 13, and 15 emulators; see the [verification report](docs/verification-v1.2.5.md). Installation on the OPPO A96 still needs to be confirmed. If a TAMAD app is already on your phone, do not remove it before backing up any saved documents; removing it can erase the app's private files. If you installed an earlier ARM64 APK, keep using the ARM64 download when updating because split APKs have a different version-code sequence.
+The v1.2.6 APKs have verified Android signatures and published checksums. The exact universal download installed and launched in Android 7, 11, 13, and 15 emulators; see the [verification report](docs/verification-v1.2.6.md) for test limits. Installation on the OPPO A96 still needs to be confirmed. If a TAMAD app is already on your phone, do not remove it before backing up any saved documents; removing it can erase the app's private files. If you installed an earlier ARM64 APK, keep using the ARM64 download when updating because split APKs have a different version-code sequence.
 
-The iOS app passes a macOS build check and renders its home screen in an iPad simulator, but an installable iPhone or iPad release requires Apple code signing and distribution through TestFlight or the App Store. The source-code ZIP and the unsigned iOS build cannot be installed on an iPhone or iPad. See the [verification report](docs/verification-v1.2.5.md) and [GitHub Releases](https://github.com/teng08/TAMAD/releases).
+The iOS project includes the TAMAD home-screen icon and supports iPhone and iPad. Its unsigned build installed and launched in an iPad simulator. An installable iPhone or iPad release requires Apple code signing and distribution through TestFlight or the App Store. The source-code ZIP and the unsigned iOS build cannot be installed on a physical iPhone or iPad. See the [verification report](docs/verification-v1.2.6.md) and [GitHub Releases](https://github.com/teng08/TAMAD/releases).
 
 ## Working in this release
 
@@ -30,6 +30,7 @@ The iOS app passes a macOS build check and renders its home screen in an iPad si
 - On-device Latin text recognition for English and Filipino text.
 - Cropping clears previously recognized text so the library does not search content that was cut away; run text recognition again after cropping.
 - Open and share PDFs through the phone's installed apps.
+- Renaming a document also renames its saved PDF, so the new filename is used when opening or sharing it. The iPad share sheet opens from the Share button.
 - Two-page ID-card scanning mode.
 - Original Material 3 UI with phone-controlled light and dark themes.
 
