@@ -16,6 +16,7 @@ class DocumentRecord {
   final String ocrText;
 
   int get pageCount => pages.length;
+  bool get isImportedPdf => pages.isEmpty;
 
   DocumentRecord copyWith({
     String? name,

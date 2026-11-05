@@ -7,6 +7,7 @@ TAMAD is an original, ad-free Android and iOS document scanner built with Flutte
 - Android: Google ML Kit document capture with automatic edge detection, perspective correction, rotation, cleanup filters, gallery import, and batches of up to 30 pages.
 - iOS: Apple VisionKit multi-page document camera with automatic crop and perspective correction. The iOS page limit is enforced when the scan finishes.
 - Separate multi-photo gallery import on both platforms. Imported photos are added as they appear; gallery import does not apply document edge detection.
+- An **Add file** button on Home and Library opens the phone's file picker on Android and iOS. It imports PDF, JPG, JPEG, or PNG files into the private document library. Imported images become single-page PDFs; imported PDFs keep their original pages and can be opened or shared.
 - Multi-page A4 PDF generation with no TAMAD watermark.
 - Local document library with name and OCR-text search.
 - Page reordering and 90-degree rotation with automatic PDF regeneration.
@@ -15,7 +16,7 @@ TAMAD is an original, ad-free Android and iOS document scanner built with Flutte
 - Two-page ID-card scanning mode.
 - Original Material 3 UI with phone-controlled light and dark themes.
 
-The Android scanner UI and model are provided by Google Play services and may need a one-time module download. iOS uses the native VisionKit document camera and requires a real iPhone for camera scanning. Merge/split, signatures, annotation, password protection, recycle bin, QR scanning, and searchable PDF text layers are visibly marked as future work rather than shipped as non-working buttons.
+The Android scanner UI and model are provided by Google Play services and may need a one-time module download. iOS uses the native VisionKit document camera and requires a real iPhone for camera scanning. Imported PDFs retain their original pages; page rotation and OCR are available for image scans and imported images. Merge/split, signatures, annotation, password protection, recycle bin, QR scanning, and searchable PDF text layers are visibly marked as future work rather than shipped as non-working buttons.
 
 ## Build
 

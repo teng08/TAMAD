@@ -30,4 +30,20 @@ void main() {
     );
     expect(DocumentRepository.sanitizeFileName('***'), '___');
   });
+
+  test('an imported PDF keeps its file-only form in saved metadata', () {
+    final source = DocumentRecord(
+      id: 'pdf-1',
+      name: 'Contract',
+      createdAt: DateTime.utc(2026, 11, 5),
+      pages: const [],
+      pdfPath: '/tmp/contract.pdf',
+    );
+
+    final restored = DocumentRecord.fromJson(source.toJson());
+
+    expect(restored.isImportedPdf, isTrue);
+    expect(restored.pages, isEmpty);
+    expect(restored.pdfPath, source.pdfPath);
+  });
 }

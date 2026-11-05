@@ -130,11 +130,41 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     }
   }
 
+  Future<void> _addFile() async {
+    if (_scanning) return;
+    setState(() => _scanning = true);
+    try {
+      final document = await ref.read(documentsProvider.notifier).addFile();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            document == null
+                ? 'No file was selected.'
+                : '${document.isImportedPdf ? 'PDF' : 'Image'} added to your library.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not add file: $error')));
+      }
+    } finally {
+      if (mounted) setState(() => _scanning = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      HomeScreen(onScan: _scan, onImportGallery: _importGallery),
-      const LibraryScreen(),
+      HomeScreen(
+        onScan: _scan,
+        onImportGallery: _importGallery,
+        onAddFile: _addFile,
+      ),
+      LibraryScreen(onAddFile: _addFile),
       ToolsScreen(onIdScan: () => _scan(pageLimit: 2, name: 'ID card')),
       const SettingsScreen(),
     ];
@@ -192,11 +222,13 @@ class HomeScreen extends ConsumerWidget {
   const HomeScreen({
     required this.onScan,
     required this.onImportGallery,
+    required this.onAddFile,
     super.key,
   });
 
   final Future<void> Function({int pageLimit, String? name}) onScan;
   final VoidCallback onImportGallery;
+  final VoidCallback onAddFile;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -243,6 +275,7 @@ class HomeScreen extends ConsumerWidget {
             _ScanCard(
               onTap: () => onScan(pageLimit: 30),
               onImportGallery: onImportGallery,
+              onAddFile: onAddFile,
             ),
             const SizedBox(height: 28),
             Row(
@@ -299,9 +332,14 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _ScanCard extends StatelessWidget {
-  const _ScanCard({required this.onTap, required this.onImportGallery});
+  const _ScanCard({
+    required this.onTap,
+    required this.onImportGallery,
+    required this.onAddFile,
+  });
   final VoidCallback onTap;
   final VoidCallback onImportGallery;
+  final VoidCallback onAddFile;
 
   @override
   Widget build(BuildContext context) {
@@ -361,6 +399,12 @@ class _ScanCard extends StatelessWidget {
                 icon: const Icon(Icons.photo_library_rounded),
                 label: const Text('Import photos'),
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onAddFile,
+                icon: const Icon(Icons.note_add_rounded),
+                label: const Text('Add file'),
+              ),
             ],
           ),
         ),
@@ -370,7 +414,9 @@ class _ScanCard extends StatelessWidget {
 }
 
 class LibraryScreen extends ConsumerStatefulWidget {
-  const LibraryScreen({super.key});
+  const LibraryScreen({required this.onAddFile, super.key});
+
+  final VoidCallback onAddFile;
 
   @override
   ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
@@ -388,10 +434,21 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Library',
-              style: Theme.of(context).textTheme.headlineMedium
-                  ?.copyWith(fontWeight: FontWeight.w900),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Library',
+                    style: Theme.of(context).textTheme.headlineMedium
+                        ?.copyWith(fontWeight: FontWeight.w900),
+                  ),
+                ),
+                FilledButton.icon(
+                  onPressed: widget.onAddFile,
+                  icon: const Icon(Icons.note_add_rounded),
+                  label: const Text('Add file'),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             TextField(
@@ -447,17 +504,23 @@ class DocumentTile extends StatelessWidget {
         contentPadding: const EdgeInsets.all(10),
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child: Image.file(
-            File(document.pages.first),
-            width: 58,
-            height: 72,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => const SizedBox(
-              width: 58,
-              height: 72,
-              child: Icon(Icons.description_rounded),
-            ),
-          ),
+          child: document.isImportedPdf
+              ? const SizedBox(
+                  width: 58,
+                  height: 72,
+                  child: Icon(Icons.picture_as_pdf_rounded, size: 34),
+                )
+              : Image.file(
+                  File(document.pages.first),
+                  width: 58,
+                  height: 72,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const SizedBox(
+                    width: 58,
+                    height: 72,
+                    child: Icon(Icons.description_rounded),
+                  ),
+                ),
         ),
         title: Text(
           document.name,
@@ -466,7 +529,7 @@ class DocumentTile extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
         subtitle: Text(
-          '${document.pageCount} page${document.pageCount == 1 ? '' : 's'} · ${DateFormat.yMMMd().add_jm().format(document.createdAt)}',
+          '${document.isImportedPdf ? 'PDF file' : '${document.pageCount} page${document.pageCount == 1 ? '' : 's'}'} · ${DateFormat.yMMMd().add_jm().format(document.createdAt)}',
         ),
         trailing: const Icon(Icons.chevron_right_rounded),
         onTap: () => Navigator.of(context).push(
@@ -579,21 +642,22 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
                     icon: const Icon(Icons.share_rounded),
                     label: const Text('Share'),
                   ),
-                  OutlinedButton.icon(
-                    onPressed: _working
-                        ? null
-                        : () => _run(
-                            () => ref
-                                .read(documentsProvider.notifier)
-                                .recognizeText(document.id),
-                          ),
-                    icon: const Icon(Icons.text_snippet_rounded),
-                    label: Text(
-                      document.ocrText.isEmpty
-                          ? 'Recognize text'
-                          : 'Refresh OCR',
+                  if (!document.isImportedPdf)
+                    OutlinedButton.icon(
+                      onPressed: _working
+                          ? null
+                          : () => _run(
+                              () => ref
+                                  .read(documentsProvider.notifier)
+                                  .recognizeText(document.id),
+                            ),
+                      icon: const Icon(Icons.text_snippet_rounded),
+                      label: Text(
+                        document.ocrText.isEmpty
+                            ? 'Recognize text'
+                            : 'Refresh OCR',
+                      ),
                     ),
-                  ),
                 ],
               ),
               if (document.ocrText.isNotEmpty) ...[
@@ -615,63 +679,74 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
-              Text(
-                'Pages',
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 8),
-              ReorderableListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: document.pages.length,
-                onReorderItem: _working
-                    ? (_, _) {}
-                    : (oldIndex, newIndex) => _run(
-                        () => ref
-                            .read(documentsProvider.notifier)
-                            .reorder(document.id, oldIndex, newIndex),
+              if (document.isImportedPdf)
+                const Padding(
+                  padding: EdgeInsets.only(top: 20),
+                  child: Text(
+                    'Imported PDFs open and share as their original file. Page editing and OCR are available for scanned images.',
+                  ),
+                ),
+              if (!document.isImportedPdf) ...[
+                const SizedBox(height: 20),
+                Text(
+                  'Pages',
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: document.pages.length,
+                  onReorderItem: _working
+                      ? (_, _) {}
+                      : (oldIndex, newIndex) => _run(
+                          () => ref
+                              .read(documentsProvider.notifier)
+                              .reorder(document.id, oldIndex, newIndex),
+                        ),
+                  itemBuilder: (context, index) => Card(
+                    key: ValueKey(document.pages[index]),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              File(document.pages[index]),
+                              width: 82,
+                              height: 104,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              'Page ${index + 1}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Rotate clockwise',
+                            onPressed: _working
+                                ? null
+                                : () => _run(
+                                    () => ref
+                                        .read(documentsProvider.notifier)
+                                        .rotate(document.id, index),
+                                  ),
+                            icon: const Icon(Icons.rotate_right_rounded),
+                          ),
+                          const Icon(Icons.drag_handle_rounded),
+                        ],
                       ),
-                itemBuilder: (context, index) => Card(
-                  key: ValueKey(document.pages[index]),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            File(document.pages[index]),
-                            width: 82,
-                            height: 104,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            'Page ${index + 1}',
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'Rotate clockwise',
-                          onPressed: _working
-                              ? null
-                              : () => _run(
-                                  () => ref
-                                      .read(documentsProvider.notifier)
-                                      .rotate(document.id, index),
-                                ),
-                          icon: const Icon(Icons.rotate_right_rounded),
-                        ),
-                        const Icon(Icons.drag_handle_rounded),
-                      ],
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
           if (_working)
@@ -812,7 +887,7 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Android scanning uses Google Play services; iPhone scanning uses Apple VisionKit. OCR runs on-device.',
           ),
           const SizedBox(height: 18),
-          const Center(child: Text('TAMAD 1.1.0 (2)')),
+          const Center(child: Text('TAMAD 1.2.0 (3)')),
         ],
       ),
     );

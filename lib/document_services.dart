@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:apple_vision_document_scanner/apple_vision_document_scanner.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image/image.dart' as image_lib;
@@ -17,6 +18,12 @@ import 'package:uuid/uuid.dart';
 import 'document_record.dart';
 
 class ScannerService {
+  Future<PlatformFile?> pickDocumentFile() => FilePicker.pickFile(
+    type: FileType.custom,
+    allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
+    dialogTitle: 'Add a PDF or image',
+  );
+
   Future<List<String>> scan({int pageLimit = 30}) async {
     if (Platform.isIOS) {
       final images = await AppleVisionDocumentScanner().scan();
@@ -94,7 +101,8 @@ class DocumentRepository {
         )
         .where(
           (item) =>
-              item.pages.isNotEmpty && File(item.pages.first).existsSync(),
+              File(item.pdfPath).existsSync() &&
+              item.pages.every((page) => File(page).existsSync()),
         )
         .toList();
     records.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -147,6 +155,64 @@ class DocumentRepository {
       pages: storedPages,
       pdfPath: pdfPath,
     );
+  }
+
+  Future<DocumentRecord> importPickedFile(PlatformFile picked) async {
+    final extension = (picked.extension ?? '').toLowerCase();
+    if (!const ['pdf', 'jpg', 'jpeg', 'png'].contains(extension)) {
+      throw const FormatException('Choose a PDF, JPG, or PNG file.');
+    }
+    final id = _uuid.v4();
+    final root = await getApplicationDocumentsDirectory();
+    final directory = Directory(path.join(root.path, 'TAMAD', id));
+    await directory.create(recursive: true);
+    try {
+      final name = sanitizeFileName(path.basenameWithoutExtension(picked.name));
+      final inputPath = path.join(directory.path, 'original.$extension');
+      final input = File(inputPath);
+      final sink = input.openWrite();
+      try {
+        await sink.addStream(picked.readAsByteStream());
+      } finally {
+        await sink.close();
+      }
+      if (await input.length() == 0) {
+        throw const FormatException('The selected file is empty.');
+      }
+      final pdfPath = path.join(directory.path, '$name.pdf');
+      if (extension == 'pdf') {
+        final header = await input
+            .openRead(0, 5)
+            .expand((bytes) => bytes)
+            .toList();
+        if (ascii.decode(header, allowInvalid: true) != '%PDF-') {
+          throw const FormatException('This is not a readable PDF file.');
+        }
+        if (input.path != pdfPath) await input.rename(pdfPath);
+        return DocumentRecord(
+          id: id,
+          name: name,
+          createdAt: DateTime.now(),
+          pages: const [],
+          pdfPath: pdfPath,
+        );
+      }
+      final decoded = image_lib.decodeImage(await input.readAsBytes());
+      if (decoded == null) {
+        throw const FormatException('This is not a readable image file.');
+      }
+      await _writePdf([inputPath], pdfPath);
+      return DocumentRecord(
+        id: id,
+        name: name,
+        createdAt: DateTime.now(),
+        pages: [inputPath],
+        pdfPath: pdfPath,
+      );
+    } catch (_) {
+      await directory.delete(recursive: true);
+      rethrow;
+    }
   }
 
   Future<DocumentRecord> rebuild(

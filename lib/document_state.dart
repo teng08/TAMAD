@@ -38,6 +38,14 @@ class DocumentsController extends AsyncNotifier<List<DocumentRecord>> {
     return document;
   }
 
+  Future<DocumentRecord?> addFile() async {
+    final picked = await ref.read(scannerProvider).pickDocumentFile();
+    if (picked == null) return null;
+    final document = await _repository.importPickedFile(picked);
+    await _commit([document, ...?state.value]);
+    return document;
+  }
+
   Future<void> rename(String id, String name) async {
     await _replace(
       id,

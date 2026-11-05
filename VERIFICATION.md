@@ -52,3 +52,18 @@ Consequently, the APK's installation signature, manifest, package metadata, depe
 - Updated APK SHA-256: `DED10B7D0977EB1FD114B43D48CFE7C02102B8725ECC4E8172FF2E701E7B480E`.
 
 The iOS target cannot be built locally on Windows. [macOS verification run 41997967516](https://github.com/teng08/TAMAD/actions/runs/41997967516) for commit `087bf26` passed package resolution, Dart analysis, unit tests, and `flutter build ios --release --no-codesign`. This verifies that the iOS runner and native plugins compile on macOS. A no-signing compilation cannot test physical camera behavior, photo permissions, document crop quality, OCR quality, PDF opening, or sharing. Those need a real iPhone and Apple development signing.
+
+## Version 1.2.0: Add file on Android and iOS
+
+- Added **Add file** on Home and Library using the native file picker for PDF, JPG, JPEG, and PNG. Imported PDFs are kept intact and can be opened or shared. Images become one-page PDFs with page editing and OCR available.
+- `flutter pub get`: passed.
+- `flutter analyze --no-pub`: passed, no issues found.
+- `flutter test --no-pub`: passed, 3/3 tests. The new test covers saved metadata for an imported PDF; device file picking still needs on-device testing.
+- `flutter build apk --release --no-pub`: passed.
+- Android package: `com.tamad.tamad`, version `1.2.0` (`versionCode 3`), minimum SDK 24, target SDK 36.
+- APK size: 87,858,328 bytes.
+- APK SHA-256: `439024B64D93189F9FF12F5C4EDD15AFE8E32B932353C82803640FDB84F9168F`.
+- Android `apksigner verify`: passed with APK Signature Scheme v2 and one Android Debug RSA signer.
+- iOS compile: pending macOS GitHub Actions verification for this version.
+
+The Windows host has no usable Android emulator or connected phone, and no iPhone or Apple signing setup. Runtime behavior of file picking, camera scanning, OCR, opening, and sharing remains unverified on physical devices.
