@@ -74,6 +74,12 @@ class DocumentsController extends AsyncNotifier<List<DocumentRecord>> {
     await _replace(id, (_) => rebuilt);
   }
 
+  Future<void> applyFilter(String id, int pageIndex, PageFilter filter) async {
+    final document = _find(id);
+    final rebuilt = await _repository.applyFilter(document, pageIndex, filter);
+    await _replace(id, (_) => rebuilt);
+  }
+
   Future<void> delete(String id) async {
     final document = _find(id);
     await _repository.deleteFiles(document);

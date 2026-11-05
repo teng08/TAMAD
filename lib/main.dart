@@ -7,7 +7,10 @@ import 'package:open_filex/open_filex.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'document_record.dart';
+import 'document_services.dart';
 import 'document_state.dart';
+
+enum _PageAction { rotate, original, enhance, grayscale, blackWhite }
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -723,16 +726,67 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
                               ),
                             ),
                           ),
-                          IconButton(
-                            tooltip: 'Rotate clockwise',
-                            onPressed: _working
-                                ? null
-                                : () => _run(
-                                    () => ref
-                                        .read(documentsProvider.notifier)
-                                        .rotate(document.id, index),
+                          PopupMenuButton<_PageAction>(
+                            tooltip: 'Edit page',
+                            enabled: !_working,
+                            icon: const Icon(Icons.tune_rounded),
+                            onSelected: (action) => _run(() async {
+                              final controller = ref.read(
+                                documentsProvider.notifier,
+                              );
+                              await switch (action) {
+                                _PageAction.rotate => controller.rotate(
+                                  document.id,
+                                  index,
+                                ),
+                                _PageAction.original => controller.applyFilter(
+                                  document.id,
+                                  index,
+                                  PageFilter.original,
+                                ),
+                                _PageAction.enhance => controller.applyFilter(
+                                  document.id,
+                                  index,
+                                  PageFilter.enhance,
+                                ),
+                                _PageAction.grayscale => controller.applyFilter(
+                                  document.id,
+                                  index,
+                                  PageFilter.grayscale,
+                                ),
+                                _PageAction.blackWhite =>
+                                  controller.applyFilter(
+                                    document.id,
+                                    index,
+                                    PageFilter.blackWhite,
                                   ),
-                            icon: const Icon(Icons.rotate_right_rounded),
+                              };
+                              await FileImage(File(document.pages[index]))
+                                  .evict();
+                            }),
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(
+                                value: _PageAction.rotate,
+                                child: Text('Rotate clockwise'),
+                              ),
+                              PopupMenuDivider(),
+                              PopupMenuItem(
+                                value: _PageAction.original,
+                                child: Text('Original color'),
+                              ),
+                              PopupMenuItem(
+                                value: _PageAction.enhance,
+                                child: Text('Enhance contrast'),
+                              ),
+                              PopupMenuItem(
+                                value: _PageAction.grayscale,
+                                child: Text('Grayscale'),
+                              ),
+                              PopupMenuItem(
+                                value: _PageAction.blackWhite,
+                                child: Text('Black and white'),
+                              ),
+                            ],
                           ),
                           const Icon(Icons.drag_handle_rounded),
                         ],
@@ -897,7 +951,7 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Android scanning uses Google Play services; iPhone scanning uses Apple VisionKit. OCR runs on-device.',
           ),
           const SizedBox(height: 18),
-          const Center(child: Text('TAMAD 1.2.2 (5)')),
+          const Center(child: Text('TAMAD 1.2.3 (6)')),
         ],
       ),
     );

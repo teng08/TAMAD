@@ -70,6 +70,96 @@ void main() {
     );
   });
 
+  test('page filters use the original image and can restore it', () async {
+    final original = image_lib.Image(width: 2, height: 1);
+    original.setPixelRgb(0, 0, 200, 30, 30);
+    original.setPixelRgb(1, 0, 30, 30, 200);
+    final originalBytes = image_lib.encodePng(original);
+    final record = await repository.importFileStream(
+      'Color scan.png',
+      Stream.value(originalBytes),
+    );
+
+    final grayRecord = await repository.applyFilter(
+      record,
+      0,
+      PageFilter.grayscale,
+    );
+    final gray = image_lib.decodePng(
+      await File(grayRecord.pages.single).readAsBytes(),
+    )!;
+    expect(gray.getPixel(0, 0).r, gray.getPixel(0, 0).g);
+    expect(gray.getPixel(0, 0).g, gray.getPixel(0, 0).b);
+
+    final enhanced = await repository.applyFilter(
+      grayRecord,
+      0,
+      PageFilter.enhance,
+    );
+    final color = image_lib.decodePng(
+      await File(enhanced.pages.single).readAsBytes(),
+    )!;
+    expect(color.getPixel(0, 0).r, greaterThan(color.getPixel(0, 0).g));
+
+    final blackWhite = await repository.applyFilter(
+      enhanced,
+      0,
+      PageFilter.blackWhite,
+    );
+    final binary = image_lib.decodePng(
+      await File(blackWhite.pages.single).readAsBytes(),
+    )!;
+    for (final pixel in binary) {
+      expect([0, 255], contains(pixel.r));
+      expect(pixel.r, pixel.g);
+      expect(pixel.g, pixel.b);
+    }
+
+    final restored = await repository.applyFilter(
+      blackWhite,
+      0,
+      PageFilter.original,
+    );
+    expect(await File(restored.pages.single).readAsBytes(), originalBytes);
+    expect(
+      ascii.decode(
+        (await File(restored.pdfPath).readAsBytes()).take(5).toList(),
+      ),
+      '%PDF-',
+    );
+  });
+
+  test(
+    'rotating a filtered page also rotates its restorable original',
+    () async {
+      final original = image_lib.Image(width: 2, height: 1);
+      original.setPixelRgb(0, 0, 220, 10, 10);
+      original.setPixelRgb(1, 0, 10, 10, 220);
+      final record = await repository.importFileStream(
+        'Page.png',
+        Stream.value(image_lib.encodePng(original)),
+      );
+      final filtered = await repository.applyFilter(
+        record,
+        0,
+        PageFilter.blackWhite,
+      );
+      final rotated = await repository.rotate(filtered, 0);
+      final restored = await repository.applyFilter(
+        rotated,
+        0,
+        PageFilter.original,
+      );
+      final decoded = image_lib.decodePng(
+        await File(restored.pages.single).readAsBytes(),
+      )!;
+
+      expect(decoded.width, 1);
+      expect(decoded.height, 2);
+      expect(decoded.getPixel(0, 0).r, isNot(decoded.getPixel(0, 0).b));
+    },
+  );
+
   test(
     'invalid image import removes its temporary document directory',
     () async {

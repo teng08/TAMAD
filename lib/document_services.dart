@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:apple_vision_document_scanner/apple_vision_document_scanner.dart';
 import 'package:file_picker/file_picker.dart';
@@ -16,6 +18,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import 'document_record.dart';
+
+enum PageFilter { original, enhance, grayscale, blackWhite }
 
 class ScannerService {
   Future<PlatformFile?> pickDocumentFile() => FilePicker.pickFile(
@@ -272,16 +276,77 @@ class DocumentRepository {
 
   Future<DocumentRecord> rotate(DocumentRecord document, int pageIndex) async {
     final page = File(document.pages[pageIndex]);
-    final decoded = image_lib.decodeImage(await page.readAsBytes());
+    final pageBytes = await page.readAsBytes();
+    final decoded = image_lib.decodeImage(pageBytes);
     if (decoded == null) {
       throw StateError('Page ${pageIndex + 1} is not a readable image.');
     }
-    final rotated = image_lib.copyRotate(decoded, angle: 90);
-    final encoded = path.extension(page.path).toLowerCase() == '.png'
-        ? image_lib.encodePng(rotated)
-        : image_lib.encodeJpg(rotated, quality: 92);
-    await page.writeAsBytes(encoded, flush: true);
-    return rebuild(document);
+    final original = File('${page.path}.original');
+    final originalBytes = await original.exists()
+        ? await original.readAsBytes()
+        : null;
+    final decodedOriginal = originalBytes == null
+        ? null
+        : image_lib.decodeImage(originalBytes);
+    if (originalBytes != null && decodedOriginal == null) {
+      throw StateError('The original page is not a readable image.');
+    }
+    final extension = path.extension(page.path).toLowerCase();
+    final rotatedPage = _encodePage(
+      image_lib.copyRotate(decoded, angle: 90),
+      extension,
+    );
+    final rotatedOriginal = decodedOriginal == null
+        ? null
+        : _encodePage(
+            image_lib.copyRotate(decodedOriginal, angle: 90),
+            extension,
+          );
+    try {
+      if (rotatedOriginal != null) {
+        await original.writeAsBytes(rotatedOriginal, flush: true);
+      }
+      await page.writeAsBytes(rotatedPage, flush: true);
+      return await rebuild(document);
+    } catch (_) {
+      await page.writeAsBytes(pageBytes, flush: true);
+      if (originalBytes != null) {
+        await original.writeAsBytes(originalBytes, flush: true);
+      }
+      rethrow;
+    }
+  }
+
+  Future<DocumentRecord> applyFilter(
+    DocumentRecord document,
+    int pageIndex,
+    PageFilter filter,
+  ) async {
+    final page = File(document.pages[pageIndex]);
+    final original = File('${page.path}.original');
+    final hasOriginal = await original.exists();
+    if (filter == PageFilter.original && !hasOriginal) return document;
+
+    final previousBytes = await page.readAsBytes();
+    final sourceBytes = hasOriginal
+        ? await original.readAsBytes()
+        : previousBytes;
+    final extension = path.extension(page.path).toLowerCase();
+    final nextBytes = filter == PageFilter.original
+        ? sourceBytes
+        : await Isolate.run(
+            () => _filterPageBytes(sourceBytes, filter, extension),
+          );
+    if (!hasOriginal && filter != PageFilter.original) {
+      await original.writeAsBytes(sourceBytes, flush: true);
+    }
+    try {
+      await page.writeAsBytes(nextBytes, flush: true);
+      return await rebuild(document);
+    } catch (_) {
+      await page.writeAsBytes(previousBytes, flush: true);
+      rethrow;
+    }
   }
 
   Future<void> deleteFiles(DocumentRecord document) async {
@@ -321,4 +386,41 @@ class DocumentRepository {
     }
     await File(outputPath).writeAsBytes(await document.save(), flush: true);
   }
+}
+
+List<int> _encodePage(image_lib.Image image, String extension) =>
+    extension == '.png'
+    ? image_lib.encodePng(image)
+    : image_lib.encodeJpg(image, quality: 92);
+
+List<int> _filterPageBytes(
+  Uint8List sourceBytes,
+  PageFilter filter,
+  String extension,
+) {
+  var image = image_lib.decodeImage(sourceBytes);
+  if (image == null) {
+    throw const FormatException('This page is not a readable image.');
+  }
+  switch (filter) {
+    case PageFilter.original:
+      return sourceBytes;
+    case PageFilter.enhance:
+      image = image_lib.contrast(image, contrast: 120);
+      break;
+    case PageFilter.grayscale:
+      image = image_lib.grayscale(image);
+      break;
+    case PageFilter.blackWhite:
+      image = image_lib.grayscale(image);
+      for (final pixel in image) {
+        final value = pixel.r >= 145 ? 255 : 0;
+        pixel
+          ..r = value
+          ..g = value
+          ..b = value;
+      }
+      break;
+  }
+  return _encodePage(image, extension);
 }
