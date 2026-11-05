@@ -8,7 +8,7 @@ Use the app download below. GitHub's **Code → Download ZIP** contains source c
 
 | Phone | Download | Minimum system |
 | --- | --- | --- |
-| Android | [Download TAMAD for Android (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.0/TAMAD-v1.2.0-android.apk) | Android API 24 or newer |
+| Android | [Download TAMAD for Android (.apk)](https://github.com/teng08/TAMAD/releases/download/v1.2.0/TAMAD-v1.2.0-android.apk) | Android 7.0 or newer |
 | iPhone | Installable download not available yet | iOS 15.5 or newer |
 
 On Android, download the APK on your phone, open it from Downloads, and follow Android's installation prompt. This preview is signed with an Android debug certificate, so it is for testing rather than Play Store distribution. The [SHA-256 checksum](https://github.com/teng08/TAMAD/releases/download/v1.2.0/TAMAD-v1.2.0-android.apk.sha256) is provided alongside it.
