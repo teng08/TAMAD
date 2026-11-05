@@ -2,6 +2,18 @@ name: Verify Android APK installation
 
 on:
   workflow_dispatch:
+    inputs:
+      asset_id:
+        description: GitHub release asset ID of the APK to install
+        required: true
+        type: string
+      expected_sha256:
+        description: Expected SHA-256 of the APK
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
   install:
@@ -9,15 +21,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api-level: [24, 30, 35]
+        api-level: [33, 35]
     steps:
       - uses: actions/checkout@v4
-      - name: Download published APK
+      - name: Download release APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSET_ID: ${{ inputs.asset_id }}
+          EXPECTED_SHA256: ${{ inputs.expected_sha256 }}
         run: |
           curl --fail --location --retry 3 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/octet-stream' \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
             --output tamad.apk \
-            https://github.com/teng08/TAMAD/releases/download/v1.2.0/TAMAD-v1.2.0-android.apk
-          printf '%s  %s\n' '439024B64D93189F9FF12F5C4EDD15AFE8E32B932353C82803640FDB84F9168F' tamad.apk | sha256sum --check
+            "https://api.github.com/repos/${{ github.repository }}/releases/assets/$ASSET_ID"
+          printf '%s  %s\n' "$EXPECTED_SHA256" tamad.apk | sha256sum --check
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
