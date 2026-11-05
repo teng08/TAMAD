@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api-level: [30, 35]
+        api-level: [24, 30, 35]
     steps:
       - uses: actions/checkout@v4
       - name: Download published APK
